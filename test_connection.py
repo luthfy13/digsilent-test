@@ -7,7 +7,7 @@ import os
 
 def add_powerfactory_path():
     """
-    Menambahkan path PowerFactory ke sys.path (support 2021 dan 2022)
+    Menambahkan path PowerFactory ke sys.path dan PATH environment (support 2021 dan 2022)
     """
     # Possible PowerFactory installation paths
     possible_paths = [
@@ -40,15 +40,38 @@ def add_powerfactory_path():
         r"C:\Program Files\DIgSILENT\PowerFactory 2022 SP2\Python\3.9",
         r"C:\Program Files\DIgSILENT\PowerFactory 2022 SP2\Python\3.10",
         r"C:\Program Files\DIgSILENT\PowerFactory 2022 SP2\Python\3.11",
+        # Custom paths (non-standard installation)
+        r"D:\Digsilent Powerfactory 2021\Digsilent\Python\3.8",
+        r"D:\Digsilent Powerfactory 2021\Digsilent\Python\3.9",
+        r"D:\Digsilent Powerfactory 2021\Digsilent\Python\3.10",
     ]
 
     print("Mencari instalasi PowerFactory...")
     for path in possible_paths:
         if os.path.exists(path):
             print(f"   ✓ Ditemukan: {path}")
+
+            # Add to sys.path
             if path not in sys.path:
                 sys.path.append(path)
                 print(f"   ✓ Path ditambahkan ke sys.path")
+
+            # Get base PowerFactory directory (go up 2 levels from Python\3.x)
+            pf_base = os.path.dirname(os.path.dirname(path))
+            print(f"   ✓ PowerFactory base directory: {pf_base}")
+
+            # Add DLL paths to PATH environment
+            # PowerFactory DLLs biasanya ada di base directory
+            if pf_base not in os.environ['PATH']:
+                os.environ['PATH'] = pf_base + os.pathsep + os.environ['PATH']
+                print(f"   ✓ DLL path ditambahkan ke PATH environment")
+
+            # Juga cek folder bin jika ada
+            bin_path = os.path.join(pf_base, 'bin')
+            if os.path.exists(bin_path) and bin_path not in os.environ['PATH']:
+                os.environ['PATH'] = bin_path + os.pathsep + os.environ['PATH']
+                print(f"   ✓ Bin path ditambahkan: {bin_path}")
+
             return True
 
     print("   ✗ Instalasi PowerFactory tidak ditemukan di lokasi default")
