@@ -60,17 +60,51 @@ def add_powerfactory_path():
             pf_base = os.path.dirname(os.path.dirname(path))
             print(f"   ✓ PowerFactory base directory: {pf_base}")
 
-            # Add DLL paths to PATH environment
-            # PowerFactory DLLs biasanya ada di base directory
-            if pf_base not in os.environ['PATH']:
-                os.environ['PATH'] = pf_base + os.pathsep + os.environ['PATH']
-                print(f"   ✓ DLL path ditambahkan ke PATH environment")
+            # Cari semua kemungkinan lokasi DLL dan tambahkan ke PATH
+            paths_to_add = []
 
-            # Juga cek folder bin jika ada
+            # 1. Base directory (Digsilent/)
+            if os.path.exists(pf_base):
+                paths_to_add.append(pf_base)
+
+            # 2. Parent directory (go up 1 more level)
+            pf_parent = os.path.dirname(pf_base)
+            if os.path.exists(pf_parent):
+                paths_to_add.append(pf_parent)
+
+            # 3. bin folder di base
             bin_path = os.path.join(pf_base, 'bin')
-            if os.path.exists(bin_path) and bin_path not in os.environ['PATH']:
-                os.environ['PATH'] = bin_path + os.pathsep + os.environ['PATH']
-                print(f"   ✓ Bin path ditambahkan: {bin_path}")
+            if os.path.exists(bin_path):
+                paths_to_add.append(bin_path)
+
+            # 4. bin folder di parent
+            parent_bin = os.path.join(pf_parent, 'bin')
+            if os.path.exists(parent_bin):
+                paths_to_add.append(parent_bin)
+
+            # 5. Cari folder yang mengandung file .exe PowerFactory
+            for root_dir in [pf_base, pf_parent]:
+                try:
+                    for item in os.listdir(root_dir):
+                        item_path = os.path.join(root_dir, item)
+                        if os.path.isdir(item_path):
+                            # Cek apakah ada file .exe di folder ini
+                            try:
+                                files = os.listdir(item_path)
+                                if any(f.lower().endswith('.exe') for f in files):
+                                    if item_path not in paths_to_add:
+                                        paths_to_add.append(item_path)
+                            except:
+                                pass
+                except:
+                    pass
+
+            # Add all paths to PATH environment
+            print(f"   ✓ Menambahkan {len(paths_to_add)} path ke PATH environment:")
+            for p in paths_to_add:
+                if p not in os.environ['PATH']:
+                    os.environ['PATH'] = p + os.pathsep + os.environ['PATH']
+                    print(f"      - {p}")
 
             return True
 
